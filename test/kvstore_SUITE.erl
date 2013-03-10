@@ -23,13 +23,14 @@ init_per_testcase(_, Config) ->
 end_per_testcase(_, _Config) ->
     ok.
 
-% write KV pair
+% test write key value pair
 write(_Config) ->
     ok = kvstore:write(
         "key-1234",
         [{test, "record value"}]
     ).
 
+% test read by key
 read(_Config) ->
     TestKey = "key-for-testing-read",
     TestValue = [
@@ -41,6 +42,7 @@ read(_Config) ->
     {TestKey, TestValue, _, _, _} = kvstore:read(TestKey),
     undefined = kvstore:read("some-random-non-existent-key").
 
+% test delete by key
 delete(_Config) ->
     TestKey = "key-for-testing-delete",
     TestValue = [

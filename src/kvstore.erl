@@ -45,10 +45,10 @@ read(Key) ->
 %% reads by Key
 %% allows to specify Mnesia access context
 read(Key, AccessContext) ->
-    case read_quiet(Key, AccessContext) of
+    case read_raw(Key, AccessContext) of
         [#kvstore_record{time_created = TC, time_modified = TM, time_accessed = _TA, value = V}] ->
             NewTA = now(),
-            write_quiet(
+            write_raw(
                 #kvstore_record {
                     key = Key,
                     time_created = TC,
@@ -72,7 +72,7 @@ write(Key, Value) ->
 write(Key, Value, AccessContext) ->
     Now = now(),
     % time_created will stay the same if modifying existing record
-    ExistingRecord = read_quiet(Key, AccessContext),
+    ExistingRecord = read_raw(Key, AccessContext),
     %ExistingRecord = mnesia:read({kvstore_record, Key}),
     case ExistingRecord =:= [] of
         true ->
@@ -80,7 +80,7 @@ write(Key, Value, AccessContext) ->
         false ->
             TimeCreated = ExistingRecord#kvstore_record.time_created
     end,
-    write_quiet(
+    write_raw(
         #kvstore_record {
             key = Key,
             time_created = TimeCreated,
@@ -91,29 +91,33 @@ write(Key, Value, AccessContext) ->
         AccessContext
     ).
 
+% deletes by key
 delete(Key) ->
     delete(Key, transaction).
 
+% deletes by key
+% allows to specify Mnesia access context
 delete(Key, AccessContext) ->
-    delete_quiet(Key, AccessContext).
+    delete_raw(Key, AccessContext).
 
-%%%%% private functions %%%%%
+%%%%% Private functions %%%%%
 
 %% wrapper around mnesia:read
-read_quiet(Key, AccessContext) ->
+read_raw(Key, AccessContext) ->
     F = fun() ->
         mnesia:read({kvstore_record, Key})
     end,
     mnesia:activity(AccessContext, F).
 
 %% wrapper around mnesia:write
-write_quiet(Record, AccessContext) ->
+write_raw(Record, AccessContext) ->
     F = fun() ->
         mnesia:write(Record)
     end,
     mnesia:activity(AccessContext, F).
 
-delete_quiet(Key, AccessContext) ->
+% wrapper around mnesia:delete
+delete_raw(Key, AccessContext) ->
     F = fun() -> 
         mnesia:delete({kvstore_record, Key})
     end,
