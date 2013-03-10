@@ -1,9 +1,9 @@
 -module(kvstore_SUITE).
 -include_lib("common_test/include/ct.hrl").
 -export([init_per_suite/1, end_per_suite/1, init_per_testcase/2, end_per_testcase/2, all/0]).
--export([write/1, read/1]).
+-export([write/1, read/1, delete/1]).
 
-all() -> [write, read].
+all() -> [write, read, delete].
 
 init_per_suite(Config) ->
     Priv = ?config(priv_dir, Config),
@@ -40,3 +40,14 @@ read(_Config) ->
     ok = kvstore:write(TestKey, TestValue),
     {TestKey, TestValue, _, _, _} = kvstore:read(TestKey),
     undefined = kvstore:read("some-random-non-existent-key").
+
+delete(_Config) ->
+    TestKey = "key-for-testing-delete",
+    TestValue = [
+        {username, "some-test-username"},
+        {session_value, "some value for testing"},
+        user
+    ],
+    ok = kvstore:write(TestKey, TestValue),
+    ok = kvstore:delete(TestKey),
+    undefined = kvstore:read(TestKey).

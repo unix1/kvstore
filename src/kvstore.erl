@@ -1,6 +1,6 @@
 -module(kvstore).
 -export([install/1, start/2, stop/1]).
--export([read/1, read/2, write/2, write/3]).
+-export([read/1, read/2, write/2, write/3, delete/1, delete/2]).
 -behavior(application).
 
 %% record definition
@@ -91,6 +91,12 @@ write(Key, Value, AccessContext) ->
         AccessContext
     ).
 
+delete(Key) ->
+    delete(Key, transaction).
+
+delete(Key, AccessContext) ->
+    delete_quiet(Key, AccessContext).
+
 %%%%% private functions %%%%%
 
 %% wrapper around mnesia:read
@@ -104,5 +110,11 @@ read_quiet(Key, AccessContext) ->
 write_quiet(Record, AccessContext) ->
     F = fun() ->
         mnesia:write(Record)
+    end,
+    mnesia:activity(AccessContext, F).
+
+delete_quiet(Key, AccessContext) ->
+    F = fun() -> 
+        mnesia:delete({kvstore_record, Key})
     end,
     mnesia:activity(AccessContext, F).
