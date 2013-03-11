@@ -1,19 +1,9 @@
 -module(kvstore).
+-include("kvstore.hrl").
 -export([install/1, start/2, stop/1]).
 -export([read/1, read/2, write/2, write/3, delete/1, delete/2]).
+-export([delete_match/1, delete_match/2]).
 -behavior(application).
-
-%% record definition
--record (
-    kvstore_record,
-    {
-        key,
-        time_created,
-        time_modified,
-        time_accessed,
-        value
-    }
-).
 
 %%%%% Admin API %%%%%
 install(Nodes) ->
@@ -91,14 +81,23 @@ write(Key, Value, AccessContext) ->
         AccessContext
     ).
 
-% deletes by key
+%% deletes by key
 delete(Key) ->
     delete(Key, transaction).
 
-% deletes by key
-% allows to specify Mnesia access context
+%% deletes by key
+%% allows to specify Mnesia access context
 delete(Key, AccessContext) ->
     delete_raw(Key, AccessContext).
+
+%% deletes by match spec
+delete_match(Match) ->
+    delete_match(Match, transaction).
+
+%% deletes by match spec
+%% allows to specify Mnesia access context
+delete_match(Match, AccessContext) ->
+    delete_match_raw(Match, AccessContext).
 
 %%%%% Private functions %%%%%
 
@@ -116,9 +115,22 @@ write_raw(Record, AccessContext) ->
     end,
     mnesia:activity(AccessContext, F).
 
-% wrapper around mnesia:delete
+%% wrapper around mnesia:delete
 delete_raw(Key, AccessContext) ->
     F = fun() -> 
         mnesia:delete({kvstore_record, Key})
+    end,
+    mnesia:activity(AccessContext, F).
+
+%% wrapper around match_object and delete_object sequence
+delete_match_raw(Match, AccessContext) ->
+    F = fun() ->
+        ListToDelete = mnesia:match_object(Match),
+        lists:foreach(
+            fun(X) ->
+                mnesia:delete_object(X)
+            end,
+            ListToDelete
+        )
     end,
     mnesia:activity(AccessContext, F).
