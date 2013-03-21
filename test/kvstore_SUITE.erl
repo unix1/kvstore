@@ -2,9 +2,9 @@
 -include_lib("common_test/include/ct.hrl").
 -include("../src/kvstore.hrl").
 -export([init_per_suite/1, end_per_suite/1, init_per_testcase/2, end_per_testcase/2, all/0]).
--export([write/1, read/1, delete/1, delete_match/1]).
+-export([write/1, read/1, writeover/1, delete/1, delete_match/1, delete_match_spec/1]).
 
-all() -> [write, read, delete, delete_match].
+all() -> [write, read, writeover, delete, delete_match, delete_match_spec].
 
 init_per_suite(Config) ->
     Priv = ?config(priv_dir, Config),
@@ -43,6 +43,15 @@ read(_Config) ->
     {TestKey, TestValue, _, _, _} = kvstore:read(TestKey),
     undefined = kvstore:read("some-random-non-existent-key").
 
+%% test write over existing record by key
+writeover(_Config) ->
+    TestKey = "key1",
+    TestValue1 = "value1",
+    TestValue2 = "value2",
+    ok = kvstore:write(TestKey, TestValue1),
+    ok = kvstore:write(TestKey, TestValue2),
+    {TestKey, TestValue2, _, _, _} = kvstore:read(TestKey).
+
 %% test delete by key
 delete(_Config) ->
     TestKey = "key-for-testing-delete",
@@ -55,7 +64,7 @@ delete(_Config) ->
     ok = kvstore:delete(TestKey),
     undefined = kvstore:read(TestKey).
 
-%% test delete by match spec
+%% test delete by match
 delete_match(_Config) ->
     TestKey1 = "key1",
     TestValue1 = "value1",
@@ -67,3 +76,18 @@ delete_match(_Config) ->
     ok = kvstore:delete_match(DeleteSpec),
     {TestKey1, TestValue1, _, _, _} = kvstore:read(TestKey1),
     undefined = kvstore:read(TestKey2).
+
+%% test delete by match spec
+delete_match_spec(_Config) ->
+    TestKey = "key-1234",
+    ok = kvstore:write(
+        TestKey,
+        [{test, "record value"}]
+    ),
+    DeleteSpec = [{
+        #kvstore_record{key='$1', time_accessed='$2', _='_'},
+        [{'<', '$2', {erlang:now()}}],
+        ['$1']
+    }],
+    ok = kvstore:delete_match_spec(DeleteSpec),
+    undefined = kvstore:read(TestKey).

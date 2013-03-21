@@ -2,7 +2,8 @@
 -include("kvstore.hrl").
 -export([install/1, start/2, stop/1]).
 -export([read/1, read/2, write/2, write/3, delete/1, delete/2]).
--export([delete_match/1, delete_match/2]).
+-export([delete_match/1, delete_match/2, delete_match_spec/1, delete_match_spec/2]).
+-export([read_raw/2]).
 -behavior(application).
 
 %%%%% Admin API %%%%%
@@ -62,12 +63,12 @@ write(Key, Value) ->
 write(Key, Value, AccessContext) ->
     Now = now(),
     % time_created will stay the same if modifying existing record
-    ExistingRecord = read_raw(Key, AccessContext),
-    %ExistingRecord = mnesia:read({kvstore_record, Key}),
-    case ExistingRecord =:= [] of
+    ExistingRecordList = read_raw(Key, AccessContext),
+    case ExistingRecordList =:= [] of
         true ->
             TimeCreated = Now;
         false ->
+            [ExistingRecord|_] = ExistingRecordList,
             TimeCreated = ExistingRecord#kvstore_record.time_created
     end,
     write_raw(
@@ -90,14 +91,23 @@ delete(Key) ->
 delete(Key, AccessContext) ->
     delete_raw(Key, AccessContext).
 
-%% deletes by match spec
-delete_match(Match) ->
-    delete_match(Match, transaction).
+%% deletes by match pattern
+delete_match(Pattern) ->
+    delete_match(Pattern, transaction).
+
+%% deletes by match pattern
+%% allows to specify Mnesia access context
+delete_match(Pattern, AccessContext) ->
+    delete_match_raw(Pattern, AccessContext).
+
+%$ deletes by match spec
+delete_match_spec(Match) ->
+    delete_match_spec(Match, transaction).
 
 %% deletes by match spec
 %% allows to specify Mnesia access context
-delete_match(Match, AccessContext) ->
-    delete_match_raw(Match, AccessContext).
+delete_match_spec(Match, AccessContext) ->
+    delete_match_spec_raw(Match, AccessContext).
 
 %%%%% Private functions %%%%%
 
@@ -117,18 +127,31 @@ write_raw(Record, AccessContext) ->
 
 %% wrapper around mnesia:delete
 delete_raw(Key, AccessContext) ->
-    F = fun() -> 
+    F = fun() ->
         mnesia:delete({kvstore_record, Key})
     end,
     mnesia:activity(AccessContext, F).
 
 %% wrapper around match_object and delete_object sequence
-delete_match_raw(Match, AccessContext) ->
+delete_match_raw(Pattern, AccessContext) ->
     F = fun() ->
-        ListToDelete = mnesia:match_object(Match),
+        ListToDelete = mnesia:match_object(Pattern),
         lists:foreach(
             fun(X) ->
                 mnesia:delete_object(X)
+            end,
+            ListToDelete
+        )
+    end,
+    mnesia:activity(AccessContext, F).
+
+%% wrapper around select_delete
+delete_match_spec_raw(Match, AccessContext) ->
+    F = fun() ->
+        ListToDelete = mnesia:select(kvstore_record, Match),
+        lists:foreach(
+            fun(X) ->
+                mnesia:delete({kvstore_record, X})
             end,
             ListToDelete
         )
