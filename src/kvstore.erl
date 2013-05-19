@@ -1,10 +1,10 @@
 -module(kvstore).
 -include("kvstore.hrl").
--export([install/1, start/2, stop/1]).
--export([read/1, read/2, write/2, write/3, delete/1, delete/2]).
--export([delete_match/1, delete_match/2, delete_match_spec/1, delete_match_spec/2]).
--export([read_raw/2]).
--behavior(application).
+-export([install/1, install_all_nodes/0, start/2, stop/1]).
+-export([start_server/1, stop_server/1]).
+-export([read/2, read/3, write/3, write/4, delete/2, delete/3]).
+-export([delete_match/2, delete_match/3, delete_match_spec/2, delete_match_spec/3]).
+-behaviour(application).
 
 %%%%% Admin API %%%%%
 install(Nodes) ->
@@ -20,140 +20,51 @@ install(Nodes) ->
     ),
     rpc:multicall(Nodes, application, stop, [mnesia]).
 
-start(normal, []) ->
+install_all_nodes() ->
+    install([node()|nodes()]).
+
+start(normal, _Args) ->
     mnesia:wait_for_tables([kvstore_record], 5000),
     kvstore_sup:start_link().
 
 stop(_) ->
+    % instruct kvstore_sup to stop all children here
     ok.
 
 %%%%% User API %%%%%
 
-%% reads by Key
-read(Key) ->
-    read(Key, transaction).
+start_server(Name) ->
+    kvstore_sup:start_server(Name).
 
-%% reads by Key
-%% allows to specify Mnesia access context
-read(Key, AccessContext) ->
-    case read_raw(Key, AccessContext) of
-        [#kvstore_record{time_created = TC, time_modified = TM, time_accessed = _TA, value = V}] ->
-            NewTA = now(),
-            write_raw(
-                #kvstore_record {
-                    key = Key,
-                    time_created = TC,
-                    time_modified = TM,
-                    time_accessed = NewTA,
-                    value = V
-                },
-                AccessContext
-            ),
-            {Key, V, TC, TM, NewTA};
-        [] ->
-            undefined
-    end.
+stop_server(Name) ->
+    kvstore_sup:stop_server(Name).
 
-%% writes by key
-write(Key, Value) ->
-    write(Key, Value, transaction).
+read(Name, Key) ->
+    kvstore_server:read(Name, Key).
 
-%% writes by key
-%% allows to specify Mnesia access context
-write(Key, Value, AccessContext) ->
-    Now = now(),
-    % time_created will stay the same if modifying existing record
-    ExistingRecordList = read_raw(Key, AccessContext),
-    case ExistingRecordList =:= [] of
-        true ->
-            TimeCreated = Now;
-        false ->
-            [ExistingRecord|_] = ExistingRecordList,
-            TimeCreated = ExistingRecord#kvstore_record.time_created
-    end,
-    write_raw(
-        #kvstore_record {
-            key = Key,
-            time_created = TimeCreated,
-            time_modified = Now,
-            time_accessed = Now,
-            value = Value
-        },
-        AccessContext
-    ).
+read(Name, Key, AccessContext) ->
+    kvstore_server:read(Name, Key, AccessContext).
 
-%% deletes by key
-delete(Key) ->
-    delete(Key, transaction).
+write(Name, Key, Value) ->
+    kvstore_server:write(Name, Key, Value).
 
-%% deletes by key
-%% allows to specify Mnesia access context
-delete(Key, AccessContext) ->
-    delete_raw(Key, AccessContext).
+write(Name, Key, Value, AccessContext) ->
+    kvstore_server:write(Name, Key, Value, AccessContext).
 
-%% deletes by match pattern
-delete_match(Pattern) ->
-    delete_match(Pattern, transaction).
+delete(Name, Key) ->
+    kvstore_server:delete(Name, Key).
 
-%% deletes by match pattern
-%% allows to specify Mnesia access context
-delete_match(Pattern, AccessContext) ->
-    delete_match_raw(Pattern, AccessContext).
+delete(Name, Key, AccessContext) ->
+    kvstore_server:delete(Name, Key, AccessContext).
 
-%$ deletes by match spec
-delete_match_spec(Match) ->
-    delete_match_spec(Match, transaction).
+delete_match(Name, Pattern) ->
+    kvstore_server:delete_match(Name, Pattern).
 
-%% deletes by match spec
-%% allows to specify Mnesia access context
-delete_match_spec(Match, AccessContext) ->
-    delete_match_spec_raw(Match, AccessContext).
+delete_match(Name, Pattern, AccessContext) ->
+    kvstore_server:delete_match(Name, Pattern, AccessContext).
 
-%%%%% Private functions %%%%%
+delete_match_spec(Name, Match) ->
+    kvstore_server:delete_match_spec(Name, Match).
 
-%% wrapper around mnesia:read
-read_raw(Key, AccessContext) ->
-    F = fun() ->
-        mnesia:read({kvstore_record, Key})
-    end,
-    mnesia:activity(AccessContext, F).
-
-%% wrapper around mnesia:write
-write_raw(Record, AccessContext) ->
-    F = fun() ->
-        mnesia:write(Record)
-    end,
-    mnesia:activity(AccessContext, F).
-
-%% wrapper around mnesia:delete
-delete_raw(Key, AccessContext) ->
-    F = fun() ->
-        mnesia:delete({kvstore_record, Key})
-    end,
-    mnesia:activity(AccessContext, F).
-
-%% wrapper around match_object and delete_object sequence
-delete_match_raw(Pattern, AccessContext) ->
-    F = fun() ->
-        ListToDelete = mnesia:match_object(Pattern),
-        lists:foreach(
-            fun(X) ->
-                mnesia:delete_object(X)
-            end,
-            ListToDelete
-        )
-    end,
-    mnesia:activity(AccessContext, F).
-
-%% wrapper around select_delete
-delete_match_spec_raw(Match, AccessContext) ->
-    F = fun() ->
-        ListToDelete = mnesia:select(kvstore_record, Match),
-        lists:foreach(
-            fun(X) ->
-                mnesia:delete({kvstore_record, X})
-            end,
-            ListToDelete
-        )
-    end,
-    mnesia:activity(AccessContext, F).
+delete_match_spec(Name, Match, AccessContext) ->
+    kvstore_server:delete_match_spec(Name, Match, AccessContext).
