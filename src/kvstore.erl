@@ -25,7 +25,8 @@ install_all_nodes() ->
 
 start(normal, _Args) ->
     mnesia:wait_for_tables([kvstore_record], 5000),
-    kvstore_sup:start_link().
+    kvstore_sup:start_link(),
+    kvstore_sup:start_server_sup().
 
 stop(_) ->
     % instruct kvstore_sup to stop all children here

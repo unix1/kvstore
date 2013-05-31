@@ -98,7 +98,7 @@ libread(Key) ->
 libread(Key, AccessContext) ->
     case libread_raw(Key, AccessContext) of
         [#kvstore_record{time_created = TC, time_modified = TM, time_accessed = _TA, value = V}] ->
-            NewTA = now(),
+            NewTA = os:timestamp(),
             libwrite_raw(
                 #kvstore_record {
                     key = Key,
@@ -121,7 +121,7 @@ libwrite(Key, Value) ->
 %% writes by key
 %% allows to specify Mnesia access context
 libwrite(Key, Value, AccessContext) ->
-    Now = now(),
+    Now = os:timestamp(),
     % time_created will stay the same if modifying existing record
     ExistingRecordList = libread_raw(Key, AccessContext),
     case ExistingRecordList =:= [] of
