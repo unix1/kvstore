@@ -41,31 +41,31 @@ stop_server(Name) ->
     kvstore_sup:stop_server(Name).
 
 read(Name, Key) ->
-    kvstore_server:read(Name, Key).
+    read(Name, Key, transaction).
 
 read(Name, Key, AccessContext) ->
     kvstore_server:read(Name, Key, AccessContext).
 
 write(Name, Key, Value) ->
-    kvstore_server:write(Name, Key, Value).
+    write(Name, Key, Value, transaction).
 
 write(Name, Key, Value, AccessContext) ->
     kvstore_server:write(Name, Key, Value, AccessContext).
 
 delete(Name, Key) ->
-    kvstore_server:delete(Name, Key).
+    delete(Name, Key, transaction).
 
 delete(Name, Key, AccessContext) ->
     kvstore_server:delete(Name, Key, AccessContext).
 
 delete_match(Name, Pattern) ->
-    kvstore_server:delete_match(Name, Pattern).
+    delete_match(Name, Pattern, transaction).
 
 delete_match(Name, Pattern, AccessContext) ->
     kvstore_server:delete_match(Name, Pattern, AccessContext).
 
 delete_match_spec(Name, Match) ->
-    kvstore_server:delete_match_spec(Name, Match).
+    delete_match_spec(Name, Match, transaction).
 
 delete_match_spec(Name, Match, AccessContext) ->
     kvstore_server:delete_match_spec(Name, Match, AccessContext).

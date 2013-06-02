@@ -4,9 +4,7 @@
 -export([start_link/2, init/1]).
 -export([handle_call/3, handle_cast/2,
          handle_info/2, code_change/3, terminate/2,
-         read/2, read/3, write/3, write/4, delete/2, delete/3,
-         delete_match/2, delete_match/3,
-         delete_match_spec/2, delete_match_spec/3]).
+         read/3, write/4, delete/3, delete_match/3, delete_match_spec/3]).
 
 start_link(Name, Sup) when is_atom(Name) ->
     gen_server:start_link({local, Name}, ?MODULE, {Sup}, []).
@@ -17,64 +15,34 @@ init({_Sup}) ->
 
 %%%%% User functions %%%%%
 
-read(Name, Key) ->
-    gen_server:call(Name, {read, Key}).
-
 read(Name, Key, AccessContext) ->
     gen_server:call(Name, {read, Key, AccessContext}).
-
-write(Name, Key, Value) ->
-    gen_server:call(Name, {write, Key, Value}).
 
 write(Name, Key, Value, AccessContext) ->
     gen_server:call(Name, {write, Key, Value, AccessContext}).
 
-delete(Name, Key) ->
-    gen_server:call(Name, {delete, Key}).
-
 delete(Name, Key, AccessContext) ->
     gen_server:call(Name, {delete, Key, AccessContext}).
 
-delete_match(Name, Pattern) ->
-    gen_server:call(Name, {delete_match, Pattern}).
-
 delete_match(Name, Pattern, AccessContext) ->
     gen_server:call(Name, {delete_match, Pattern, AccessContext}).
-
-delete_match_spec(Name, Match) ->
-    gen_server:call(Name, {delete_match_spec, Match}).
 
 delete_match_spec(Name, Match, AccessContext) ->
     gen_server:call(Name, {delete_match_spec, Match, AccessContext}).
 
 %%%%% Server functions %%%%%
 
-handle_call({read, Key}, _From, S) ->
-    {reply, libread(Key), S};
-
 handle_call({read, Key, AccessContext}, _From, S) ->
     {reply, libread(Key, AccessContext), S};
-
-handle_call({write, Key, Value}, _From, S) ->
-    {reply, libwrite(Key, Value), S};
 
 handle_call({write, Key, Value, AccessContext}, _From, S) ->
     {reply, libwrite(Key, Value, AccessContext), S};
 
-handle_call({delete, Key}, _From, S) ->
-    {reply, libdelete(Key), S};
-
 handle_call({delete, Key, AccessContext}, _From, S) ->
     {reply, libdelete(Key, AccessContext), S};
 
-handle_call({delete_match, Pattern}, _From, S) ->
-    {reply, libdelete_match(Pattern), S};
-
 handle_call({delete_match, Pattern, AccessContext}, _From, S) ->
     {reply, libdelete_match(Pattern, AccessContext), S};
-
-handle_call({delete_match_spec, Match}, _From, S) ->
-    {reply, libdelete_match_spec(Match), S};
 
 handle_call({delete_match_spec, Match, AccessContext}, _From, S) ->
     {reply, libdelete_match_spec(Match, AccessContext), S}.
@@ -88,10 +56,6 @@ terminate(_Reason, _State) -> ok.
 code_change(_OldVersion, State, _Extra) -> {ok, State}.
 
 %%%%% library functions %%%%%
-
-%% reads by Key
-libread(Key) ->
-    libread(Key, transaction).
 
 %% reads by Key
 %% allows to specify Mnesia access context
@@ -113,10 +77,6 @@ libread(Key, AccessContext) ->
         [] ->
             undefined
     end.
-
-%% writes by key
-libwrite(Key, Value) ->
-    libwrite(Key, Value, transaction).
 
 %% writes by key
 %% allows to specify Mnesia access context
@@ -143,26 +103,14 @@ libwrite(Key, Value, AccessContext) ->
     ).
 
 %% deletes by key
-libdelete(Key) ->
-    libdelete(Key, transaction).
-
-%% deletes by key
 %% allows to specify Mnesia access context
 libdelete(Key, AccessContext) ->
     libdelete_raw(Key, AccessContext).
 
 %% deletes by match pattern
-libdelete_match(Pattern) ->
-    libdelete_match(Pattern, transaction).
-
-%% deletes by match pattern
 %% allows to specify Mnesia access context
 libdelete_match(Pattern, AccessContext) ->
     libdelete_match_raw(Pattern, AccessContext).
-
-%$ deletes by match spec
-libdelete_match_spec(Match) ->
-    libdelete_match_spec(Match, transaction).
 
 %% deletes by match spec
 %% allows to specify Mnesia access context
