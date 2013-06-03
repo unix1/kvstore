@@ -28,8 +28,7 @@ The obvious preprequisite for kvstore is the Erlang runtime. To install:
 
 * to install with 2 nodes called kv1 and kv2 start Erlang shell in 2 different shells
 
-      `shell1> erl -pa ebin/ -sname kv1@localhost`
-
+      `shell1> erl -pa ebin/ -sname kv1@localhost`  
       `shell2> erl -pa ebin/ -sname kv2@localhost`
 
 * link kv2 to kv1 - i.e. in kv2 shell type
@@ -47,7 +46,7 @@ Tests
 
 To run tests, change into the project directory and run:
 
-      `ct_run -pa ebin/ -spec kvstore.spec`
+    ct_run -pa ebin/ -spec kvstore.spec
 
 Run
 ---
@@ -56,8 +55,7 @@ To run the kvstore server:
 
 * start the Erlang shell on each host or Mnesia instance
 
-      `shell1> erl -pa ebin/ -sname kv1@localhost`
-
+      `shell1> erl -pa ebin/ -sname kv1@localhost`  
       `shell2> erl -pa ebin/ -sname kv2@localhost`
 
 * connect each instance - i.e. on all instances except the first:
@@ -66,8 +64,7 @@ To run the kvstore server:
 
 * start applications on all instances:
 
-      `application:start(mnesia).`
-
+      `application:start(mnesia).`  
       `application:start(kvstore).`
 
 * to use server from shell, start an agent gen_server first:
