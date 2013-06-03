@@ -46,6 +46,7 @@ Tests
 -----
 
 To run tests, change into the project directory and run:
+
       `ct_run -pa ebin/ -spec kvstore.spec`
 
 Run
@@ -61,7 +62,7 @@ To run the kvstore server:
 
 * connect each instance - i.e. on all instances except the first:
 
-      `net_kernel:connect_node('kv1@localhost').
+      `net_kernel:connect_node('kv1@localhost').`
 
 * start applications on all instances:
 
