@@ -35,6 +35,7 @@ stop(_) ->
 %%%%% User API %%%%%
 
 start_server(Name) ->
+    %% TODO restrict what atom Name can be so they are not completely dynamic
     kvstore_sup:start_server(Name).
 
 stop_server(Name) ->

@@ -88,7 +88,7 @@ After starting the server as above, you can run commands from shell to operate o
 
 * to delete data by key
 
-      `kvstore:delete(kv_t1).`
+      `kvstore:delete(kv_t1, "key-1").`
 
 Advanced Usage
 --------------
