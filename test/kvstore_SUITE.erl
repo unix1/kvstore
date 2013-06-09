@@ -28,9 +28,9 @@ end_per_testcase(_, _Config) ->
 %% test write key value pair
 write(_Config) ->
     ok = kvstore:write(
-        kvtest,
         "key-1234",
-        [{test, "record value"}]
+        [{test, "record value"}],
+        {via, kvtest}
     ).
 
 %% test read by key
@@ -41,18 +41,18 @@ read(_Config) ->
         {session_value, "some value for testing"},
         user
     ],
-    ok = kvstore:write(kvtest, TestKey, TestValue),
-    {TestKey, TestValue, _, _, _} = kvstore:read(kvtest, TestKey),
-    undefined = kvstore:read(kvtest, "some-random-non-existent-key").
+    ok = kvstore:write(TestKey, TestValue, {via, kvtest}),
+    {TestKey, TestValue, _, _, _} = kvstore:read(TestKey, {via, kvtest}),
+    undefined = kvstore:read("some-random-non-existent-key", {via, kvtest}).
 
 %% test write over existing record by key
 writeover(_Config) ->
     TestKey = "key1",
     TestValue1 = "value1",
     TestValue2 = "value2",
-    ok = kvstore:write(kvtest, TestKey, TestValue1),
-    ok = kvstore:write(kvtest, TestKey, TestValue2),
-    {TestKey, TestValue2, _, _, _} = kvstore:read(kvtest, TestKey).
+    ok = kvstore:write(TestKey, TestValue1, {via, kvtest}),
+    ok = kvstore:write(TestKey, TestValue2, {via, kvtest}),
+    {TestKey, TestValue2, _, _, _} = kvstore:read(TestKey, {via, kvtest}).
 
 %% test delete by key
 delete(_Config) ->
@@ -62,9 +62,9 @@ delete(_Config) ->
         {session_value, "some value for testing"},
         user
     ],
-    ok = kvstore:write(kvtest, TestKey, TestValue),
-    ok = kvstore:delete(kvtest, TestKey),
-    undefined = kvstore:read(kvtest, TestKey).
+    ok = kvstore:write(TestKey, TestValue, {via, kvtest}),
+    ok = kvstore:delete(TestKey, {via, kvtest}),
+    undefined = kvstore:read(TestKey, {via, kvtest}).
 
 %% test delete by match
 delete_match(_Config) ->
@@ -72,25 +72,25 @@ delete_match(_Config) ->
     TestValue1 = "value1",
     TestKey2 = "key2",
     TestValue2 = "value2",
-    ok = kvstore:write(kvtest, TestKey1, TestValue1),
-    ok = kvstore:write(kvtest, TestKey2, TestValue2),
+    ok = kvstore:write(TestKey1, TestValue1, {via, kvtest}),
+    ok = kvstore:write(TestKey2, TestValue2, {via, kvtest}),
     DeleteSpec = #kvstore_record{value = TestValue2, _ = '_'},
-    ok = kvstore:delete_match(kvtest, DeleteSpec),
-    {TestKey1, TestValue1, _, _, _} = kvstore:read(kvtest, TestKey1),
-    undefined = kvstore:read(kvtest, TestKey2).
+    ok = kvstore:delete_match(DeleteSpec, {via, kvtest}),
+    {TestKey1, TestValue1, _, _, _} = kvstore:read(TestKey1, {via, kvtest}),
+    undefined = kvstore:read(TestKey2, {via, kvtest}).
 
 %% test delete by match spec
 delete_match_spec(_Config) ->
     TestKey = "key-1234",
     ok = kvstore:write(
-        kvtest,
         TestKey,
-        [{test, "record value"}]
+        [{test, "record value"}],
+        {via, kvtest}
     ),
     DeleteSpec = [{
         #kvstore_record{key='$1', time_accessed='$2', _='_'},
         [{'<', '$2', {erlang:now()}}],
         ['$1']
     }],
-    ok = kvstore:delete_match_spec(kvtest, DeleteSpec),
-    undefined = kvstore:read(kvtest, TestKey).
+    ok = kvstore:delete_match_spec(DeleteSpec, {via, kvtest}),
+    undefined = kvstore:read(TestKey, {via, kvtest}).

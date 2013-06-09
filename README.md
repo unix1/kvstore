@@ -67,12 +67,6 @@ To run the kvstore server:
       `application:start(mnesia).`  
       `application:start(kvstore).`
 
-* to use server from shell, start an agent gen_server first:
-
-      `kvstore:start_server(kv_t1).`
-
-* now you can use this agent to perform any key/value operations
-
 Basic Usage
 -----------
 
@@ -80,15 +74,15 @@ After starting the server as above, you can run commands from shell to operate o
 
 * to write data
 
-      `kvstore:write(kv_t1, "key-1", "value-1").`
+      `kvstore:write("key-1", "value-1").`
 
 * to read data by key
 
-      `kvstore:read(kv_t1, "key-1").`
+      `kvstore:read("key-1").`
 
 * to delete data by key
 
-      `kvstore:delete(kv_t1, "key-1").`
+      `kvstore:delete("key-1").`
 
 Advanced Usage
 --------------
