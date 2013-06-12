@@ -1,5 +1,5 @@
 -module(kvstore_server_sup).
--export([start_link/0, init/1, start_server/0, start_server/1]).
+-export([start_link/0, init/1, start_server/0, start_server/1, stop_server/1]).
 -behaviour(supervisor).
 
 start_link() ->
@@ -33,3 +33,7 @@ start_server(Name) ->
         [kvstore_server]
     },
     supervisor:start_child(?MODULE, ChildSpec).
+
+stop_server(Name) ->
+    supervisor:terminate_child(?MODULE, Name),
+    supervisor:delete_child(?MODULE, Name).

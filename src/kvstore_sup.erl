@@ -25,6 +25,4 @@ start_server(Name) ->
     kvstore_server_sup:start_server(Name).
 
 stop_server(Name) ->
-    % TODO move these to kvstore_server_sup
-    supervisor:terminate_child(kvstore_server_sup, Name),
-    supervisor:delete_child(kvstore_server_sup, Name).
+    kvstore_server_sup:stop_server(Name).
