@@ -3,12 +3,14 @@
 -include("../src/kvstore.hrl").
 -export([init_per_suite/1, end_per_suite/1, init_per_testcase/2, end_per_testcase/2, all/0]).
 -export([
+    start_server/1,
     write_via/1, read_via/1, writeover_via/1, delete_via/1, delete_match_via/1,
     delete_match_spec_via/1,
     write/1, read/1, writeover/1, delete/1, delete_match/1, delete_match_spec/1
 ]).
 
-all() -> [write, write_via, read, read_via, writeover, writeover_via,
+all() -> [
+    start_server, write, write_via, read, read_via, writeover, writeover_via,
     delete, delete_via, delete_match, delete_match_via,
     delete_match_spec, delete_match_spec_via].
 
@@ -30,6 +32,11 @@ init_per_testcase(_, Config) ->
 
 end_per_testcase(_, _Config) ->
     ok.
+
+%% test starting and stopping a gen_server worker
+start_server(_Config) ->
+    {ok, _Pid} = kvstore:start_server(srv_start_server1),
+    ok = kvstore:stop_server(srv_start_server1).
 
 %% test write key value pair
 write(_Config) ->
